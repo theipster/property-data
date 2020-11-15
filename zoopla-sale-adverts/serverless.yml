@@ -1,0 +1,17 @@
+service: zoopla-sale-adverts
+frameworkVersion: '2'
+
+plugins:
+  - serverless-cloudformation-sub-variables
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+
+functions:
+  capture:
+    handler: handler.capture
+    events:
+      - sns: 'arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:ZooplaSaleAdvertDecodedTopic'
