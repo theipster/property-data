@@ -6,10 +6,17 @@ provider:
   runtime: nodejs12.x
   tracing:
     lambda: true
+  iamRoleStatements:
+    - Action:
+        - SNS:Publish
+      Effect: Allow
+      Resource: !Ref ZooplaSaleAdvertDecodedTopic
 
 functions:
   decode:
     handler: handler.decode
+    environment:
+      ZOOPLA_SALE_TOPIC_ARN: !Ref ZooplaSaleAdvertDecodedTopic
     events:
       - stream:
           type: dynamodb
@@ -30,3 +37,7 @@ resources:
         StreamSpecification:
           StreamViewType: KEYS_ONLY
         TableName: urls
+    ZooplaSaleAdvertDecodedTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ZooplaSaleAdvertDecodedTopic
