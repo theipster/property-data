@@ -1,0 +1,32 @@
+service: advert-urls
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+
+functions:
+  decode:
+    handler: handler.decode
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt UrlsTable.StreamArn
+
+resources:
+  Resources:
+    UrlsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: url
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: url
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: KEYS_ONLY
+        TableName: urls
