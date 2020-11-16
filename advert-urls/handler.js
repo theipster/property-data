@@ -1,24 +1,19 @@
 'use strict';
 
 const AWS = require("aws-sdk");
-const sns = new AWS.SNS();
+const eventBridge = new AWS.EventBridge();
+const env = process.env;
 
-const topicArns = {
-  ZOOPLA_SALE: process.env.ZOOPLA_SALE_TOPIC_ARN
-};
-
-function generateNotification(url, topicArns) {
+function generateEvent(url, env) {
   let zooplaSaleMatches = /^https:\/\/www\.zoopla\.co\.uk\/for-sale\/details\/([0-9]+)/.exec(url);
   if (zooplaSaleMatches) {
     return {
-      Message: "Detected Zoopla Sale advert",
-      MessageAttributes: {
-        id: {
-          DataType: "String",
-          StringValue: zooplaSaleMatches[1]
-        }
-      },
-      TopicArn: topicArns.ZOOPLA_SALE
+      Detail: JSON.stringify({
+        id: zooplaSaleMatches[1]
+      }),
+      DetailType: "ZOOPLA_SALE_ADVERT_IDENTIFIED",
+      EventBusName: env.EVENT_BUS,
+      Source: env.EVENT_SOURCE
     };
   }
 
@@ -27,6 +22,6 @@ function generateNotification(url, topicArns) {
 
 module.exports.decode = async event => {
   let url = event.Records[0].dynamodb.Keys.url.S;
-  let notification = generateNotification(url, topicArns);
-  return sns.publish(notification).promise();
+  let generatedEvent = generateEvent(url, env);
+  return eventBridge.putEvents({Entries: [generatedEvent]}).promise();
 };

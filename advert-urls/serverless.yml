@@ -8,15 +8,18 @@ provider:
     lambda: true
   iamRoleStatements:
     - Action:
-        - SNS:Publish
+        - events:PutEvents
       Effect: Allow
-      Resource: !Ref ZooplaSaleAdvertDecodedTopic
+      Resource: 'arn:aws:events:*:*:event-bus/*'
 
 functions:
   decode:
     handler: handler.decode
+    description: |
+      Given an advert URL: decodes the advert type and platform, then emits a corresponding *_ADVERT_IDENTIFIED event.
     environment:
-      ZOOPLA_SALE_TOPIC_ARN: !Ref ZooplaSaleAdvertDecodedTopic
+      EVENT_BUS: default
+      EVENT_SOURCE: property-data.advert-urls
     events:
       - stream:
           type: dynamodb
@@ -37,7 +40,3 @@ resources:
         StreamSpecification:
           StreamViewType: KEYS_ONLY
         TableName: urls
-    ZooplaSaleAdvertDecodedTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ZooplaSaleAdvertDecodedTopic
