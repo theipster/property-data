@@ -19,7 +19,7 @@ functions:
       Given an advert URL: decodes the advert type and platform, then emits a corresponding *_ADVERT_IDENTIFIED event.
     environment:
       EVENT_BUS: default
-      EVENT_SOURCE: property-data.advert-urls
+      EVENT_SOURCE: property-data.${self:service}
     events:
       - stream:
           type: dynamodb
@@ -39,4 +39,4 @@ resources:
             KeyType: HASH
         StreamSpecification:
           StreamViewType: KEYS_ONLY
-        TableName: urls
+        TableName: advert-urls
