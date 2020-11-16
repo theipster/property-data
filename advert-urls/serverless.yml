@@ -1,0 +1,42 @@
+service: advert-urls
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Action:
+        - events:PutEvents
+      Effect: Allow
+      Resource: 'arn:aws:events:*:*:event-bus/*'
+
+functions:
+  decode:
+    handler: handler.decode
+    description: |
+      Given an advert URL: decodes the advert type and platform, then emits a corresponding *_ADVERT_IDENTIFIED event.
+    environment:
+      EVENT_BUS: default
+      EVENT_SOURCE: property-data.${self:service}
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt UrlsTable.StreamArn
+
+resources:
+  Resources:
+    UrlsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: url
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: url
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: KEYS_ONLY
+        TableName: advert-urls

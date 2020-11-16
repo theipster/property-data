@@ -1,0 +1,21 @@
+service: zoopla-sale-adverts
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+
+functions:
+  capture:
+    handler: handler.capture
+    description: |
+      Given a Zoopla sale advert URL: takes a snapshot of the page, then saves it to storage.
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - property-data.advert-urls
+            detail-type:
+              - ZOOPLA_SALE_ADVERT_IDENTIFIED
