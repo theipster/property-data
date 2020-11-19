@@ -21,7 +21,11 @@ function generateEvent(url, env) {
 }
 
 module.exports.decode = async event => {
-  let url = event.Records[0].dynamodb.Keys.url.S;
-  let generatedEvent = generateEvent(url, env);
-  return eventBridge.putEvents({Entries: [generatedEvent]}).promise();
+  let Entries = event.Records.map(
+    record => generateEvent(
+      record.dynamodb.Keys.url.S,
+      env
+    )
+  );
+  return eventBridge.putEvents({Entries}).promise();
 };
