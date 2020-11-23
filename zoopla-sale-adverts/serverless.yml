@@ -6,12 +6,24 @@ provider:
   runtime: nodejs12.x
   tracing:
     lambda: true
+  iamRoleStatements:
+    - Action:
+        - s3:PutObject
+      Effect: Allow
+      Resource:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:s3:::'
+            - Ref: ZooplaAdvertsBucket
+            - '/*'
 
 functions:
   capture:
     handler: handler.capture
     description: |
       Given a Zoopla sale advert URL: takes a snapshot of the page, then saves it to storage.
+    environment:
+      BUCKET: !Ref ZooplaAdvertsBucket
     events:
       - eventBridge:
           pattern:
@@ -19,3 +31,12 @@ functions:
               - property-data.advert-urls
             detail-type:
               - ZOOPLA_SALE_ADVERT_IDENTIFIED
+
+resources:
+  Resources:
+    ZooplaAdvertsBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      Properties:
+        VersioningConfiguration:
+          Status: Enabled
