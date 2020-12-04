@@ -1,4 +1,4 @@
-service: zoopla-sale-adverts
+service: zoopla-sale-advert-capture
 frameworkVersion: '2'
 
 provider:
@@ -14,16 +14,16 @@ provider:
         Fn::Join:
           - ''
           - - 'arn:aws:s3:::'
-            - Ref: ZooplaAdvertsBucket
+            - Ref: ZooplaSaleAdvertsBucket
             - '/*'
 
 functions:
   capture:
-    handler: handler.capture
+    handler: capture.handler
     description: |
       Given a Zoopla sale advert URL: takes a snapshot of the page, then saves it to storage.
     environment:
-      BUCKET: !Ref ZooplaAdvertsBucket
+      BUCKET: !Ref ZooplaSaleAdvertsBucket
     events:
       - eventBridge:
           pattern:
@@ -34,7 +34,7 @@ functions:
 
 resources:
   Resources:
-    ZooplaAdvertsBucket:
+    ZooplaSaleAdvertsBucket:
       Type: AWS::S3::Bucket
       DeletionPolicy: Retain
       Properties:
