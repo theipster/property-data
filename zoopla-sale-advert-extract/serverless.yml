@@ -44,10 +44,14 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: hash
+          - AttributeName: id
             AttributeType: S
+          - AttributeName: creationTime
+            AttributeType: N
         BillingMode: PAY_PER_REQUEST
         KeySchema:
-          - AttributeName: hash
+          - AttributeName: id
             KeyType: HASH
+          - AttributeName: creationTime
+            KeyType: RANGE
         TableName: zoopla-sales-adverts

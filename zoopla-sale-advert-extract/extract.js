@@ -37,8 +37,7 @@ function getRawSnapshot(bucketName, objectKey, objectVersionId) {
 function parseSnapshotItem(objectKey, content, lastModified, matchers) {
   let item = {};
   item.id = { S: matchers.ID.exec(objectKey)[1] };
-  item.version = { N: lastModified.getTime().toString() };  // Note: milliseconds
-  item.hash = { S: `${item.id.S}-${item.version.N}` };
+  item.creationTime = { N: Math.floor(lastModified.getTime() / 1000).toString() };
   // @todo Some other attributes
   return item;
 }
