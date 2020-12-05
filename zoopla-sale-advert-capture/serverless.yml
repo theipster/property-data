@@ -33,6 +33,11 @@ functions:
               - ZOOPLA_SALE_ADVERT_IDENTIFIED
 
 resources:
+  Outputs:
+    ZooplaSaleAdvertsBucketName:
+      Value: !Ref ZooplaSaleAdvertsBucket
+      Export:
+        Name: ZooplaSaleAdvertsBucketName
   Resources:
     ZooplaSaleAdvertsBucket:
       Type: AWS::S3::Bucket

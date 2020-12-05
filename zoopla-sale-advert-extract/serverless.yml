@@ -1,0 +1,53 @@
+service: zoopla-sale-advert-extract
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Action:
+        - s3:GetObject
+        - s3:GetObjectVersion
+      Effect: Allow
+      Resource:
+        - Fn::Join:
+          - ''
+          - - 'arn:aws:s3:::'
+            - Fn::ImportValue: ZooplaSaleAdvertsBucketName
+            - '/*'
+    - Action:
+        - dynamodb:PutItem
+      Effect: Allow
+      Resource: !GetAtt ZooplaSaleAdvertsTable.Arn
+
+functions:
+  extract:
+    handler: extract.handler
+    description: |
+      Given a Zoopla sale advert page snapshot: parse snapshot data and persist into a database table.
+    environment:
+      TABLE: !Ref ZooplaSaleAdvertsTable
+    events:
+      - s3:
+          bucket: !ImportValue ZooplaSaleAdvertsBucketName
+          event: s3:ObjectCreated:*
+          existing: true
+
+resources:
+  Outputs:
+    ZooplaSaleAdvertsTableName:
+      Value: !Ref ZooplaSaleAdvertsTable
+  Resources:
+    ZooplaSaleAdvertsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: hash
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: hash
+            KeyType: HASH
+        TableName: zoopla-sales-adverts
