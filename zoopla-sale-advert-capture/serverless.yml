@@ -27,9 +27,9 @@ functions:
       - eventBridge:
           pattern:
             source:
-              - property-data.advert-urls
+              - property-data.zoopla-sale-advert-schedule
             detail-type:
-              - ZOOPLA_SALE_ADVERT_IDENTIFIED
+              - SNAPSHOT_REQUESTED
 
 resources:
   Outputs:
