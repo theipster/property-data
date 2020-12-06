@@ -20,7 +20,7 @@ functions:
   capture:
     handler: capture.handler
     description: |
-      Given a Zoopla sale advert URL: takes a snapshot of the page, then saves it to storage.
+      Given a SNAPSHOT_REQUESTED event: takes a snapshot of the page, then saves it to storage.
     environment:
       BUCKET: !Ref ZooplaSaleAdvertsBucket
     events:
