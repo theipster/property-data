@@ -69,7 +69,6 @@ function parseSnapshotItem(objectKey, objectVersionId, content, lastModified, ma
     item.sharedOwnership = { BOOL: json.is_shared_ownership };
     item.status = { S: json.listing_status };
     item.tenure = { S: json.tenure };
-
   } else {
     console.warn("Could not parse unstructured JSON: %s @ %s", objectKey, objectVersionId);
   }
@@ -85,12 +84,10 @@ function sanitiseItem(item) {
 
   // Strip blank values
   Object.keys(item)
-    .filter(it => "S" in item[it])
+    .filter(it => "S" in item[it] && item[it].S == "")
     .forEach(key => {
-      if (item[key].S == "") {
-        console.warn("Removing empty value for %s: %s", key, item[key]);
-        delete item[key];
-      }
+      console.warn("Removing empty value for %s: %s", key, item[key]);
+      delete item[key];
     });
 
   // Sort by keys
