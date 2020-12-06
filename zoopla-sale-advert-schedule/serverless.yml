@@ -1,0 +1,67 @@
+service: zoopla-sale-advert-schedule
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Action: dynamodb:PutItem
+      Effect: Allow
+      Resource: !GetAtt ZooplaSaleAdvertsSchedule.Arn
+    - Action: events:PutEvents
+      Effect: Allow
+      Resource: 'arn:aws:events:*:*:event-bus/*'
+
+functions:
+  new:
+    handler: handler.newHandler
+    description: |
+      Given a Zoopla sale advert URL: schedule a snapshot.
+    environment:
+      EVENT_BUS: default
+      EVENT_SOURCE: property-data.${self:service}
+      EVENT_TYPE: SNAPSHOT_REQUESTED
+      TTL: 300
+      SCHEDULE: !Ref ZooplaSaleAdvertsSchedule
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - property-data.advert-urls
+            detail-type:
+              - ZOOPLA_SALE_ADVERT_IDENTIFIED
+  repeat:
+    handler: handler.repeatHandler
+    description: |
+      Given an expired Zoopla sale advert snapshot: reschedule another snapshot.
+    environment:
+      EVENT_BUS: default
+      EVENT_SOURCE: property-data.${self:service}
+      EVENT_TYPE: SNAPSHOT_REQUESTED
+      TTL: 300
+      SCHEDULE: !Ref ZooplaSaleAdvertsSchedule
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt ZooplaSaleAdvertsSchedule.StreamArn
+
+resources:
+  Resources:
+    ZooplaSaleAdvertsSchedule:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: OLD_IMAGE
+        TableName: ${self:service}
+        TimeToLiveSpecification:
+          AttributeName: expiry
+          Enabled: true
