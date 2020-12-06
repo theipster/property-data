@@ -11,20 +11,21 @@ function hasRecordExpiredNaturally(record) {
     && record.userIdentity.principalId == "dynamodb.amazonaws.com";
 }
 
-function requestSnapshot(id, eventBus, eventSource, eventType) {
+function requestSnapshot(id, env) {
   return eventBridge.putEvents({
     Entries: [
       {
         Detail: JSON.stringify({id}),
-        DetailType: eventType,
-        EventBusName: eventBus,
-        Source: eventSource
+        DetailType: env.EVENT_TYPE,
+        EventBusName: env.EVENT_BUS,
+        Source: env.EVENT_SOURCE
       }
     ]
   }).promise();
 }
 
-function scheduleRepeat(id, now, ttl, table) {
+function scheduleRepeat(id, now, env) {
+  let ttl = parseInt(env.TTL);
   return dynamodb.putItem({
     Item: {
       id: {
@@ -37,25 +38,23 @@ function scheduleRepeat(id, now, ttl, table) {
         N: (now + ttl).toString()
       }
     },
-    TableName: table
+    TableName: env.SCHEDULE
   }).promise();
 }
 
 module.exports.newHandler = async event => {
   let id = event.detail.id;
   let now = Math.floor(new Date().getTime() / 1000);
-  let ttl = parseInt(env.TTL);
   console.log(`Scheduling new snapshot for ${id}`);
 
   return await Promise.all([
-    requestSnapshot(id, env.EVENT_BUS, env.EVENT_SOURCE, env.EVENT_TYPE),
-    scheduleRepeat(id, now, ttl, env.SCHEDULE)
+    requestSnapshot(id, env),
+    scheduleRepeat(id, now, env)
   ]);
 };
 
 module.exports.repeatHandler = async event => {
   let now = Math.floor(new Date().getTime() / 1000);
-  let ttl = parseInt(env.TTL);
 
   return await Promise.all(
     event.Records
@@ -66,8 +65,8 @@ module.exports.repeatHandler = async event => {
           console.log(`Scheduling repeat snapshot for ${id}`);
 
           return Promise.all([
-            requestSnapshot(id, env.EVENT_BUS, env.EVENT_SOURCE, env.EVENT_TYPE),
-            scheduleRepeat(id, now, ttl, env.SCHEDULE)
+            requestSnapshot(id, env),
+            scheduleRepeat(id, now, env)
           ]);
         }
       )
