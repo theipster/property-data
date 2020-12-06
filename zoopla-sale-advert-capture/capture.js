@@ -64,7 +64,7 @@ function putS3(id, body, bucket) {
   }).promise();
 }
 
-module.exports.capture = async event => {
+module.exports.handler = async event => {
   let id = event.detail.id;
 
   return httpsGet(`https://www.zoopla.co.uk/for-sale/details/${id}`)
