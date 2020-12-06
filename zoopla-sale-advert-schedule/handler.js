@@ -11,7 +11,7 @@ function hasRecordExpiredNaturally(record) {
     && record.userIdentity.principalId == "dynamodb.amazonaws.com";
 }
 
-function requestSnapshot(id, env) {
+async function requestSnapshot(id, env) {
   return eventBridge.putEvents({
     Entries: [
       {
@@ -24,7 +24,7 @@ function requestSnapshot(id, env) {
   }).promise();
 }
 
-function scheduleRepeat(id, now, env) {
+async function scheduleRepeat(id, now, env) {
   let ttl = parseInt(env.TTL);
   return dynamodb.putItem({
     Item: {
@@ -47,7 +47,7 @@ module.exports.newHandler = async event => {
   let now = Math.floor(new Date().getTime() / 1000);
   console.log(`Scheduling new snapshot for ${id}`);
 
-  return await Promise.all([
+  return Promise.all([
     requestSnapshot(id, env),
     scheduleRepeat(id, now, env)
   ]);
@@ -56,7 +56,7 @@ module.exports.newHandler = async event => {
 module.exports.repeatHandler = async event => {
   let now = Math.floor(new Date().getTime() / 1000);
 
-  return await Promise.all(
+  return Promise.all(
     event.Records
       .filter(hasRecordExpiredNaturally)
       .map(

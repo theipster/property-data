@@ -14,23 +14,25 @@ const MATCHERS = {
   UNSTRUCTURED_JSON_TIDY: / +([a-z_]+):/g
 };
 
-function extract(bucketName, objectKey, objectVersionId, matchers) {
+async function extract(bucketName, objectKey, objectVersionId, matchers) {
   console.log(`Extracting ${objectKey} @ ${objectVersionId}`);
-  return getRawSnapshot(bucketName, objectKey, objectVersionId)
-    .then(data => {
-      return saveSnapshotItem(
-        parseSnapshotItem(
-          objectKey,
-          objectVersionId,
-          data.Body.toString(),
-          data.LastModified,
-          matchers
-        )
-      );
-    });
+  let snapshot = await getRawSnapshot(
+    bucketName,
+    objectKey,
+    objectVersionId
+  );
+  return saveSnapshotItem(
+    parseSnapshotItem(
+      objectKey,
+      objectVersionId,
+      snapshot.Body.toString(),
+      snapshot.LastModified,
+      matchers
+    )
+  );
 }
 
-function getRawSnapshot(bucketName, objectKey, objectVersionId) {
+async function getRawSnapshot(bucketName, objectKey, objectVersionId) {
   return s3.getObject({
     Bucket: bucketName,
     Key: objectKey,
@@ -94,7 +96,7 @@ function sanitiseItem(item) {
   return Object.fromEntries(Object.entries(item).sort());
 }
 
-function saveSnapshotItem(item) {
+async function saveSnapshotItem(item) {
   return dynamodb.putItem({
     Item: item,
     TableName: env.TABLE
@@ -102,7 +104,7 @@ function saveSnapshotItem(item) {
 }
 
 module.exports.handler = async event => {
-  return await Promise.all(
+  return Promise.all(
     event.Records.map(
       record => extract(
         record.s3.bucket.name,
