@@ -15,7 +15,7 @@ class HttpError extends Error {
   }
 }
 
-function httpsGet(url) {
+async function httpsGet(url) {
   return new Promise((resolve, reject) => {
     console.log(`Downloading URL ${url}`);
 
@@ -50,7 +50,7 @@ function httpsGet(url) {
   });
 }
 
-function putS3(id, body, bucket) {
+async function putS3(id, body, bucket) {
   let contentMd5 = crypto.createHash("md5")
     .update(body)
     .digest("base64");
@@ -67,6 +67,6 @@ function putS3(id, body, bucket) {
 module.exports.handler = async event => {
   let id = event.detail.id;
 
-  return httpsGet(`https://www.zoopla.co.uk/for-sale/details/${id}`)
-    .then(body => putS3(id, body, env.BUCKET));
+  let body = await httpsGet(`https://www.zoopla.co.uk/for-sale/details/${id}`);
+  return putS3(id, body, env.BUCKET);
 };

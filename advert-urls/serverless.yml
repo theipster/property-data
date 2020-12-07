@@ -4,6 +4,8 @@ frameworkVersion: '2'
 provider:
   name: aws
   runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
   tracing:
     lambda: true
   iamManagedPolicies:
