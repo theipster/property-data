@@ -30,6 +30,7 @@ functions:
               - property-data.zoopla-sale-advert-schedule
             detail-type:
               - SNAPSHOT_REQUESTED
+#    reservedConcurrency: 0      # Throttle for emergencies.
 
 resources:
   Outputs:
