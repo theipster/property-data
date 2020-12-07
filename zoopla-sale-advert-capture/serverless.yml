@@ -4,8 +4,12 @@ frameworkVersion: '2'
 provider:
   name: aws
   runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
   tracing:
     lambda: true
+  iamManagedPolicies:
+    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
         - s3:PutObject
@@ -20,7 +24,7 @@ functions:
   capture:
     handler: capture.handler
     description: |
-      Given a Zoopla sale advert URL: takes a snapshot of the page, then saves it to storage.
+      Given a SNAPSHOT_REQUESTED event: takes a snapshot of the page, then saves it to storage.
     environment:
       BUCKET: !Ref ZooplaSaleAdvertsBucket
     events:
@@ -30,6 +34,9 @@ functions:
               - property-data.zoopla-sale-advert-schedule
             detail-type:
               - SNAPSHOT_REQUESTED
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
+#    reservedConcurrency: 0      # Throttle for emergencies.
 
 resources:
   Outputs:

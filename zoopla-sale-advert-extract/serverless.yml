@@ -4,8 +4,12 @@ frameworkVersion: '2'
 provider:
   name: aws
   runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
   tracing:
     lambda: true
+  iamManagedPolicies:
+    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
         - s3:GetObject
@@ -34,6 +38,8 @@ functions:
           bucket: !ImportValue ZooplaSaleAdvertsBucketName
           event: s3:ObjectCreated:*
           existing: true
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
 
 resources:
   Outputs:
