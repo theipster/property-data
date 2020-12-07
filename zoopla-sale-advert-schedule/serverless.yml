@@ -6,6 +6,8 @@ provider:
   runtime: nodejs12.x
   tracing:
     lambda: true
+  iamManagedPolicies:
+    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action: dynamodb:PutItem
       Effect: Allow
@@ -32,6 +34,8 @@ functions:
               - property-data.advert-urls
             detail-type:
               - ZOOPLA_SALE_ADVERT_IDENTIFIED
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
   repeat:
     handler: handler.repeatHandler
     description: |
@@ -46,6 +50,8 @@ functions:
       - stream:
           type: dynamodb
           arn: !GetAtt ZooplaSaleAdvertsSchedule.StreamArn
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
 
 resources:
   Resources:
