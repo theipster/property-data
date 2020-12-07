@@ -8,6 +8,8 @@ provider:
     SERVICE: ${self:service}
   tracing:
     lambda: true
+  iamManagedPolicies:
+    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
         - s3:PutObject
@@ -32,6 +34,8 @@ functions:
               - property-data.zoopla-sale-advert-schedule
             detail-type:
               - SNAPSHOT_REQUESTED
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
 #    reservedConcurrency: 0      # Throttle for emergencies.
 
 resources:

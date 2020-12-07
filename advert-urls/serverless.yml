@@ -8,6 +8,8 @@ provider:
     SERVICE: ${self:service}
   tracing:
     lambda: true
+  iamManagedPolicies:
+    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
         - events:PutEvents
@@ -26,6 +28,8 @@ functions:
       - stream:
           type: dynamodb
           arn: !GetAtt UrlsTable.StreamArn
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
 
 resources:
   Resources:
