@@ -11,6 +11,14 @@ function hasRecordExpiredNaturally(record) {
     && record.userIdentity.principalId == "dynamodb.amazonaws.com";
 }
 
+function randomise(x) {
+  // Generate a random factor between 0.75 and 1.25
+  let factor = 0.75 + Math.random() / 2;
+
+  // Adjust x by random factor, then rounded to a nice integer.
+  return Math.round(x * factor);
+}
+
 async function requestSnapshot(id, env) {
   return eventBridge.putEvents({
     Entries: [
@@ -35,7 +43,7 @@ async function scheduleRepeat(id, now, env) {
         N: now.toString()
       },
       expiry: {
-        N: (now + ttl).toString()
+        N: (now + randomise(ttl)).toString()
       }
     },
     TableName: env.SCHEDULE

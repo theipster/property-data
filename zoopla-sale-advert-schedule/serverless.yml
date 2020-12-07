@@ -27,7 +27,7 @@ functions:
       EVENT_BUS: default
       EVENT_SOURCE: property-data.${self:service}
       EVENT_TYPE: SNAPSHOT_REQUESTED
-      TTL: 300
+      TTL: 21600
       SCHEDULE: !Ref ZooplaSaleAdvertsSchedule
     events:
       - eventBridge:
@@ -46,7 +46,7 @@ functions:
       EVENT_BUS: default
       EVENT_SOURCE: property-data.${self:service}
       EVENT_TYPE: SNAPSHOT_REQUESTED
-      TTL: 300
+      TTL: 21600
       SCHEDULE: !Ref ZooplaSaleAdvertsSchedule
     events:
       - stream:
