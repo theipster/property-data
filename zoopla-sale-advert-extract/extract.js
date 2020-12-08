@@ -75,6 +75,9 @@ function parseSnapshotItem(objectKey, objectVersionId, content, lastModified, ma
     console.warn("Could not parse unstructured JSON: %s @ %s", objectKey, objectVersionId);
   }
 
+  // Log structured data
+  console.log(JSON.stringify(item));
+
   // Tag essential info
   item.id = { S: matchers.ID.exec(objectKey)[1] };
   item.creationTime = { N: Math.floor(lastModified.getTime() / 1000).toString() };
