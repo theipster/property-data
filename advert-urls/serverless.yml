@@ -30,6 +30,7 @@ functions:
           arn: !GetAtt UrlsTable.StreamArn
     layers:
       - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
+    memorySize: 256
 
 resources:
   Resources:

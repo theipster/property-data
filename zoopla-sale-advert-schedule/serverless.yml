@@ -38,6 +38,7 @@ functions:
               - ZOOPLA_SALE_ADVERT_IDENTIFIED
     layers:
       - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
+    memorySize: 256
   repeat:
     handler: handler.repeatHandler
     description: |
@@ -54,6 +55,7 @@ functions:
           arn: !GetAtt ZooplaSaleAdvertsSchedule.StreamArn
     layers:
       - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
+    memorySize: 256
 
 resources:
   Resources:

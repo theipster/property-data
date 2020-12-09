@@ -36,6 +36,7 @@ functions:
               - SNAPSHOT_REQUESTED
     layers:
       - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
+    memorySize: 256
 #    reservedConcurrency: 0      # Throttle for emergencies.
 
 resources:
