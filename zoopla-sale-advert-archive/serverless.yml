@@ -1,0 +1,44 @@
+service: zoopla-sale-advert-archive
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
+  tracing:
+    lambda: true
+  iamManagedPolicies:
+    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+  iamRoleStatements:
+    - Action: s3:PutObject
+      Effect: Allow
+      Resource:
+        Fn::Join:
+          - '/'
+          - - !GetAtt ZooplaSaleAdvertsArchiveBucket.Arn
+            - '*'
+
+functions:
+  archive:
+    handler: archive.handler
+    description: |
+      Given a Zoopla sale advert snapshot: de-duplicate consecutive snapshots and archive new content only.
+    environment:
+      ARCHIVE_BUCKET: !Ref ZooplaSaleAdvertsArchiveBucket
+    events:
+      - stream:
+          type: dynamodb
+          arn: !ImportValue ZooplaSaleAdvertsIndexTableStreamArn
+    layers:
+      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
+    memorySize: 256
+
+resources:
+  Resources:
+    ZooplaSaleAdvertsArchiveBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      Properties:
+        VersioningConfiguration:
+          Status: Enabled

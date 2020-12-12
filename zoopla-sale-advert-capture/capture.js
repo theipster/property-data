@@ -1,29 +1,40 @@
 'use strict';
 
 const AWS = require("aws-sdk"),
-  crypto = require("crypto"),
   { get } = require("https.js");
 
-const env = process.env;
-const s3 = new AWS.S3();
+const dynamodb = new AWS.DynamoDB({
+  params: {
+    TableName: process.env.INDEX_TABLE
+  }
+});
 
-async function putS3(id, body, bucket) {
-  let contentMd5 = crypto.createHash("md5")
-    .update(body)
-    .digest("base64");
+function normalize(body) {
+  // Strip A/B test data.
+  return body.replace(/ZPG\.(trackData\.ab|flags) = {.*?};/g, '');
+}
 
-  return s3.putObject({
-    Body: body,
-    Bucket: bucket,
-    ContentMD5: contentMd5,
-    ContentType: "text/html",
-    Key: `details/${id}.html`
+async function putIndexItem(id, body, now) {
+  return dynamodb.putItem({
+    Item: {
+      id: {
+        S: id
+      },
+      time: {
+        N: now.toString()
+      },
+      content: {
+        S: body
+      }
+    }
   }).promise();
 }
 
 module.exports.handler = async event => {
   let id = event.detail.id;
+  let now = Math.floor(new Date().getTime() / 1000);
 
   let body = await get(`https://www.zoopla.co.uk/for-sale/details/${id}`);
-  return putS3(id, body, env.BUCKET);
+  let normalized = normalize(body);
+  return putIndexItem(id, normalized, now);
 };

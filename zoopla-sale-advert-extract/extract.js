@@ -2,10 +2,11 @@
 
 const AWS = require("aws-sdk");
 
-const env = process.env;
-
-const dynamodb = new AWS.DynamoDB(),
-  s3 = new AWS.S3();
+const dynamodb = new AWS.DynamoDB({
+  params: {
+    TableName: process.env.DATA_LAKE_TABLE
+  }
+});
 
 const MATCHERS = {
   ID: /^details\/([0-9]+)\.html$/,
@@ -14,33 +15,31 @@ const MATCHERS = {
   UNSTRUCTURED_JSON_TIDY: / +([a-z_]+):/g
 };
 
-async function extract(bucketName, objectKey, objectVersionId, matchers) {
-  console.log(`Extracting ${objectKey} @ ${objectVersionId}`);
-  let snapshot = await getRawSnapshot(
-    bucketName,
-    objectKey,
-    objectVersionId
-  );
-  return saveSnapshotItem(
-    parseSnapshotItem(
-      objectKey,
-      objectVersionId,
-      snapshot.Body.toString(),
-      snapshot.LastModified,
-      matchers
+async function extractToDataLake(record) {
+  let { id, time, content } = record.dynamodb.NewImage;
+
+  console.log(`Extracting ${id.S}, snapshot from ${time.N}`);
+
+  // Parse snapshot content
+  let snapshotItem = sanitiseItem(
+    parseSnapshot(
+      content.S,
+      MATCHERS
     )
   );
+
+  // Output structured data to logs ;)
+  console.log(snapshotItem);
+
+  // Persist to data lake
+  return saveDataLakeItem({
+    id,
+    time,
+    ...snapshotItem
+  });
 }
 
-async function getRawSnapshot(bucketName, objectKey, objectVersionId) {
-  return s3.getObject({
-    Bucket: bucketName,
-    Key: objectKey,
-    VersionId: objectVersionId
-  }).promise();
-}
-
-function parseSnapshotItem(objectKey, objectVersionId, content, lastModified, matchers) {
+function parseSnapshot(content, matchers) {
   let item = {};
 
   // Parse structured JSON
@@ -53,7 +52,7 @@ function parseSnapshotItem(objectKey, objectVersionId, content, lastModified, ma
     item.latitude = { N: residence.geo.latitude };
     item.longitude = { N: residence.geo.longitude };
   } else {
-    console.warn("Could not parse structured JSON: %s @ %s", objectKey, objectVersionId);
+    console.warn("Could not parse structured JSON.");
   }
 
   // Parse less-structured JSON
@@ -72,17 +71,10 @@ function parseSnapshotItem(objectKey, objectVersionId, content, lastModified, ma
     item.status = { S: json.listing_status };
     item.tenure = { S: json.tenure };
   } else {
-    console.warn("Could not parse unstructured JSON: %s @ %s", objectKey, objectVersionId);
+    console.warn("Could not parse unstructured JSON.");
   }
 
-  // Log structured data
-  console.log(JSON.stringify(item));
-
-  // Tag essential info
-  item.id = { S: matchers.ID.exec(objectKey)[1] };
-  item.creationTime = { N: Math.floor(lastModified.getTime() / 1000).toString() };
-
-  return sanitiseItem(item);
+  return item;
 }
 
 function sanitiseItem(item) {
@@ -99,22 +91,18 @@ function sanitiseItem(item) {
   return Object.fromEntries(Object.entries(item).sort());
 }
 
-async function saveSnapshotItem(item) {
-  return dynamodb.putItem({
-    Item: item,
-    TableName: env.TABLE
-  }).promise();
+async function saveDataLakeItem(Item) {
+  return dynamodb.putItem({Item}).promise();
+}
+
+function shouldExtractToDataLake(record) {
+  return "NewImage" in record.dynamodb;
 }
 
 module.exports.handler = async event => {
   return Promise.all(
-    event.Records.map(
-      record => extract(
-        record.s3.bucket.name,
-        record.s3.object.key,
-        record.s3.object.versionId,
-        MATCHERS
-      )
-    )
+    event.Records
+      .filter(shouldExtractToDataLake)
+      .map(extractToDataLake)
   );
 };

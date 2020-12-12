@@ -12,53 +12,38 @@ provider:
     - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
-        - s3:GetObject
-        - s3:GetObjectVersion
-      Effect: Allow
-      Resource:
-        - Fn::Join:
-          - ''
-          - - 'arn:aws:s3:::'
-            - Fn::ImportValue: ZooplaSaleAdvertsBucketName
-            - '/*'
-    - Action:
         - dynamodb:PutItem
       Effect: Allow
-      Resource: !GetAtt ZooplaSaleAdvertsTable.Arn
+      Resource: !GetAtt ZooplaSaleAdvertsDataLakeTable.Arn
 
 functions:
   extract:
     handler: extract.handler
     description: |
-      Given a Zoopla sale advert page snapshot: parse snapshot data and persist into a database table.
+      Given a Zoopla sale advert page snapshot: parse snapshot data and persist into a data lake.
     environment:
-      TABLE: !Ref ZooplaSaleAdvertsTable
+      DATA_LAKE_TABLE: !Ref ZooplaSaleAdvertsDataLakeTable
     events:
-      - s3:
-          bucket: !ImportValue ZooplaSaleAdvertsBucketName
-          event: s3:ObjectCreated:*
-          existing: true
+      - stream:
+          type: dynamodb
+          arn: !ImportValue ZooplaSaleAdvertsIndexTableStreamArn
     layers:
       - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
     memorySize: 256
 
 resources:
-  Outputs:
-    ZooplaSaleAdvertsTableName:
-      Value: !Ref ZooplaSaleAdvertsTable
   Resources:
-    ZooplaSaleAdvertsTable:
+    ZooplaSaleAdvertsDataLakeTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: creationTime
+          - AttributeName: time
             AttributeType: N
         BillingMode: PAY_PER_REQUEST
         KeySchema:
           - AttributeName: id
             KeyType: HASH
-          - AttributeName: creationTime
+          - AttributeName: time
             KeyType: RANGE
-        TableName: zoopla-sales-adverts
