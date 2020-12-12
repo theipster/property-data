@@ -9,9 +9,26 @@ const dynamodb = new AWS.DynamoDB({
   }
 });
 
+const NORMALIZERS = [
+
+  // A/B test
+  /ZPG\.(trackData\.ab|flags) = {.*?};/g,
+
+  // Page view count
+  /[0-9]+ page views/,
+
+  // Rental estimates
+  /£[0-9,]+ pcm/,
+
+  // Similar properties
+  /<article class="ui-property-card">.*?<\/article>/gs
+];
+
 function normalize(body) {
-  // Strip A/B test data.
-  return body.replace(/ZPG\.(trackData\.ab|flags) = {.*?};/g, '');
+  return NORMALIZERS.reduce(
+    (normalized, regex) => normalized.replace(regex, ""),
+    body
+  );
 }
 
 async function putIndexItem(id, body, now) {
