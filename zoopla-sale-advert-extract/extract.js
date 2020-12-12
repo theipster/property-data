@@ -29,7 +29,7 @@ async function extractToDataLake(record) {
   );
 
   // Output structured data to logs ;)
-  console.log(snapshotItem);
+  console.log("Extracted ", snapshotItem);
 
   // Persist to data lake
   return saveDataLakeItem({
