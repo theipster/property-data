@@ -1,7 +1,14 @@
 #!/bin/sh
 
 now=`date +%Y%m%d-%H%M%S`
+basedir=`dirname "$0"`
 
-find . -type f -name "serverless.yml" -exec dirname {} \; \
-    | xargs -I {} -P 0 bash --login -O expand_aliases -c "cd {}; mkdir -p logs; echo \"Deploying \$(basename {})...\"; serverless info $@ > logs/deploy-$now.log" \
+# Ensure log dir exists
+logdir="$basedir/logs/deployment-$now"
+mkdir -p $logdir
+logdir=`realpath "$logdir"`
+
+# Run serverless deploy
+find "$basedir" -type f -name "serverless.yml" -exec dirname {} \; \
+    | xargs -I {} -P 0 bash --login -O expand_aliases -c "cd {}; service=\$(basename {}); echo \"Deploying \$service...\"; serverless info $@ > \"$logdir/\$service.log\"" \
     && echo "Deployed. 🚀"
