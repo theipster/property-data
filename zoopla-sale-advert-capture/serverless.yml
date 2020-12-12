@@ -11,22 +11,17 @@ provider:
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
-    - Action:
-        - s3:PutObject
+    - Action: dynamodb:PutItem
       Effect: Allow
-      Resource:
-        Fn::Join:
-          - '/'
-          - - !GetAtt ZooplaSaleAdvertsBucket.Arn
-            - '*'
+      Resource: !GetAtt ZooplaSaleAdvertsIndexTable.Arn
 
 functions:
   capture:
     handler: capture.handler
     description: |
-      Given a SNAPSHOT_REQUESTED event: takes a snapshot of the page, then saves it to storage.
+      Given a SNAPSHOT_REQUESTED event: takes a snapshot of the page, then indexes it.
     environment:
-      BUCKET: !Ref ZooplaSaleAdvertsBucket
+      INDEX_TABLE: !Ref ZooplaSaleAdvertsIndexTable
     events:
       - eventBridge:
           pattern:
@@ -41,14 +36,20 @@ functions:
 
 resources:
   Outputs:
-    ZooplaSaleAdvertsBucketName:
-      Value: !Ref ZooplaSaleAdvertsBucket
+    ZooplaSaleAdvertsIndexTableStreamArn:
+      Value: !GetAtt ZooplaSaleAdvertsIndexTable.StreamArn
       Export:
-        Name: ZooplaSaleAdvertsBucketName
+        Name: ZooplaSaleAdvertsIndexTableStreamArn
   Resources:
-    ZooplaSaleAdvertsBucket:
-      Type: AWS::S3::Bucket
-      DeletionPolicy: Retain
+    ZooplaSaleAdvertsIndexTable:
+      Type: AWS::DynamoDB::Table
       Properties:
-        VersioningConfiguration:
-          Status: Enabled
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
