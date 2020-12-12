@@ -10,5 +10,5 @@ logdir=`realpath "$logdir"`
 
 # Run serverless deploy
 find "$basedir" -type f -name "serverless.yml" -exec dirname {} \; \
-    | xargs -I {} -P 0 bash --login -O expand_aliases -c "cd {}; service=\$(basename {}); echo \"Deploying \$service...\"; serverless info $@ > \"$logdir/\$service.log\"" \
+    | xargs -I {} -P 0 bash --login -O expand_aliases -c "cd {}; service=\$(basename {}); echo \"Deploying \$service...\"; serverless deploy $@ > \"$logdir/\$service.log\"" \
     && echo "Deployed. 🚀"
