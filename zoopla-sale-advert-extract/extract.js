@@ -29,7 +29,7 @@ async function extractToDataLake(record) {
   );
 
   // Output structured data to logs ;)
-  console.log("Extracted ", snapshotItem);
+  console.log(`Extracted ${id.S}`, snapshotItem);
 
   // Persist to data lake
   return saveDataLakeItem({
@@ -81,7 +81,10 @@ function sanitiseItem(item) {
 
   // Strip blank values
   Object.keys(item)
-    .filter(it => "S" in item[it] && item[it].S == "")
+    .filter(it =>
+      "S" in item[it] && item[it].S == ""
+        || "N" in item[it] && item[it].N == ""
+    )
     .forEach(key => {
       console.warn("Removing empty value for %s: %s", key, item[key]);
       delete item[key];
