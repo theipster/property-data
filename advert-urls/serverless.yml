@@ -15,6 +15,7 @@ provider:
         - events:PutEvents
       Effect: Allow
       Resource: 'arn:aws:events:*:*:event-bus/*'
+  logRetentionInDays: 14
 
 functions:
   decode:

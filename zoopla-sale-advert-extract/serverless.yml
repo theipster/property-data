@@ -15,6 +15,7 @@ provider:
         - dynamodb:PutItem
       Effect: Allow
       Resource: !GetAtt ZooplaSaleAdvertsDataLakeTable.Arn
+  logRetentionInDays: 14
 
 functions:
   extract:
