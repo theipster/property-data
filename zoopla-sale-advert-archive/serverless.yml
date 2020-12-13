@@ -18,6 +18,7 @@ provider:
           - '/'
           - - !GetAtt ZooplaSaleAdvertsArchiveBucket.Arn
             - '*'
+  logRetentionInDays: 14
 
 functions:
   archive:

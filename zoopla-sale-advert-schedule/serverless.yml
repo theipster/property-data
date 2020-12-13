@@ -17,6 +17,7 @@ provider:
     - Action: events:PutEvents
       Effect: Allow
       Resource: 'arn:aws:events:*:*:event-bus/*'
+  logRetentionInDays: 14
 
 functions:
   new:
