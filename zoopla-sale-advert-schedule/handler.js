@@ -53,7 +53,7 @@ async function scheduleRepeat(id, now, env) {
 module.exports.newHandler = async event => {
   let id = event.detail.id;
   let now = Math.floor(new Date().getTime() / 1000);
-  console.log(`Scheduling new snapshot for ${id}`);
+  console.log(`Scheduler requesting new snapshot for ${id}`);
 
   return Promise.all([
     requestSnapshot(id, env),
@@ -70,7 +70,7 @@ module.exports.repeatHandler = async event => {
       .map(
         record => {
           let id = record.dynamodb.Keys.id.S;
-          console.log(`Scheduling repeat snapshot for ${id}`);
+          console.log(`Scheduler requesting repeat snapshot for ${id}`);
 
           return Promise.all([
             requestSnapshot(id, env),
