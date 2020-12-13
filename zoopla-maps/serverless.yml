@@ -1,0 +1,92 @@
+service: zoopla-maps
+frameworkVersion: '2'
+
+custom:
+  scheduler:
+    table: !Ref Schedule
+    ttl: 21600
+
+provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+  iamRoleStatements:
+    - Action: dynamodb:PutItem
+      Effect: Allow
+      Resource: !GetAtt Schedule.Arn
+    - Action: sqs:SendMessage
+      Effect: Allow
+      Resource: !GetAtt Tasks.Arn
+    - Action: events:PutEvents
+      Effect: Allow
+      Resource: 'arn:aws:events:*:*:event-bus/*'
+  logRetentionInDays: 14
+  memorySize: 128
+  name: aws
+  runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
+  tracing:
+    lambda: true
+
+functions:
+  dispatch:
+    description: |
+      Given job events from the internal scheduler: new jobs are enqueued ASAP; expired jobs get rescheduled.
+    environment:
+      TABLE: ${self:custom.scheduler.table}
+      TASKS: !Ref Tasks
+      TTL: ${self:custom.scheduler.ttl}
+    events:
+      - stream:
+          arn: !GetAtt Schedule.StreamArn
+          type: dynamodb
+    handler: dispatch.handler
+    reservedConcurrency: 1
+
+  ingest:
+    description: |
+      Given a de-duped GEOGRAPHICAL_AREA_IDENTIFIED event: schedule a new job.
+    environment:
+      TABLE: ${self:custom.scheduler.table}
+      TTL: ${self:custom.scheduler.ttl}
+    events:
+      - eventBridge:
+          pattern:
+            detail-type:
+              - GEOGRAPHICAL_AREA_IDENTIFIED
+            source:
+              - prefix: property-data.
+    handler: ingest.handler
+    reservedConcurrency: 1
+
+  search:
+    description: |
+      Given a geographical area: discover adverts for the area, and emit a ZOOPLA_*_ADVERT_IDENTIFIED event for each.
+    environment:
+      EVENT_BUS: default
+      EVENT_SOURCE: property-data.${self:service}
+    events:
+      - sqs:
+          arn: !GetAtt Tasks.Arn
+    handler: search.handler
+    reservedConcurrency: 1
+
+resources:
+  Resources:
+    Schedule:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TimeToLiveSpecification:
+          AttributeName: expiry
+          Enabled: true
+    Tasks:
+      Type: AWS::SQS::Queue
