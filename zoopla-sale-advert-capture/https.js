@@ -15,7 +15,16 @@ async function get(url) {
     https.get(
       url,
       response => {
-        if (response.statusCode != 200) {
+        let { headers, statusCode } = response;
+
+        // Follow whitelisted redirects
+        if (statusCode == 301
+          && headers.location.startsWith("https://www.zoopla.co.uk/new-homes/details/")
+        ) {
+          return resolve(get(headers.location));
+        }
+
+        if (statusCode != 200) {
           response.resume();
           throw new HttpError(response);
         }
