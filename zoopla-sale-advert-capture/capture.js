@@ -17,6 +17,9 @@ const NORMALIZERS = [
   // Page view count
   /[0-9]+ page views/,
 
+  // Recent sales
+  /<li class="dp-recent-sales__row-item( |").*?<\/li>/gs,
+
   // Rental estimates
   /£[0-9,]+ pcm/,
 
