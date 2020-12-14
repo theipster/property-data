@@ -5,7 +5,8 @@ const eventBridge = new AWS.EventBridge();
 const env = process.env;
 
 function generateEvent(url, env) {
-  let zooplaSaleMatches = /^https:\/\/www\.zoopla\.co\.uk\/for-sale\/details\/([0-9]+)/.exec(url);
+  let zooplaSaleMatches = /^https:\/\/www\.zoopla\.co\.uk\/for-sale\/details\/([0-9]+)/.exec(url)
+    || /^https:\/\/www\.zoopla\.co\.uk\/new-homes\/details\/([0-9]+)/.exec(url);
   if (zooplaSaleMatches) {
     return {
       Detail: JSON.stringify({
