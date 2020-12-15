@@ -15,16 +15,24 @@ async function archiveToS3(record) {
   let { id, contentGzip, contentMd5 } = record.dynamodb.NewImage;
   let content = Buffer.from(contentGzip.B, "base64");
 
-  return s3.putObject({
+  let putPromise = s3.putObject({
     Body: content,
     ContentMD5: contentMd5.S,
     ContentType: "text/html",
     Key: `details/${id.S}.html.gz`
-  })
-    .on("success", response => {
-      console.log(`Archived ${id.S}, ${Buffer.byteLength(content)} bytes.`);
-    })
-    .promise();
+  }).promise();
+
+  return putPromise.then(response => {
+    console.log(`Archived ${id.S}, ${Buffer.byteLength(content)} bytes.`);
+
+    let deletePromise = s3.deleteObject({
+      Key: `details/${id.S}.html`
+    }).promise();
+
+    return deletePromise.then(response => {
+      console.log(`LEGACY: ensured old archive for ${id.S} no longer exists.`);
+    });
+  });
 }
 
 async function migrateRecordImage(image) {
