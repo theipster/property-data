@@ -20,23 +20,17 @@ const MATCHERS = {
 };
 
 async function extractToDataLake(record) {
-  let { id, time, content, contentGzip } = record.dynamodb.NewImage;
+  let { id, time, contentGzip } = record.dynamodb.NewImage;
 
   console.log(`Extracting ${id.S}, snapshot from ${time.N}`);
 
   // Decompress
-  if (!contentGzip) {
-    console.warn("LEGACY: still using uncompressed record.");
-  } else {
-    let decompressed = await promisifiedGunzip(Buffer.from(contentGzip.B, "base64"));
-    content, contentGzip = null;     // Save memory during the swap
-    content = { S: decompressed };
-  }
+  let content = await promisifiedGunzip(Buffer.from(contentGzip.B, "base64"));
 
   // Parse snapshot content
   let snapshotItem = sanitiseItem(
     parseSnapshot(
-      content.S,
+      content,
       MATCHERS
     )
   );

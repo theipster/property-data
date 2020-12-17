@@ -1,15 +1,10 @@
-const AWS = require("aws-sdk"),
-  { gzip } = require("zlib"),
-  { promisify } = require("util"),
-  crypto = require("crypto");
+const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
   params: {
     Bucket: process.env.ARCHIVE_BUCKET
   }
 });
-
-const promisifiedGzip = promisify(gzip);
 
 async function archiveToS3(record) {
   let { id, contentGzip, contentMd5 } = record.dynamodb.NewImage;
@@ -35,29 +30,6 @@ async function archiveToS3(record) {
   });
 }
 
-async function migrateRecordImage(image) {
-
-  // No migration required?
-  if ("contentMd5" in image) {
-    return image;
-  }
-
-  console.warn("LEGACY: still using uncompressed record.");
-
-  // Compress
-  let compressed = await promisifiedGzip(image.content.S);
-  delete image.content;
-  image.contentGzip = { B: compressed.toString("base64") };
-
-  // Calculate hash
-  let md5 = crypto.createHash("md5")
-    .update(compressed)
-    .digest("base64");
-  image.contentMd5 = { S: md5 };
-
-  return image;
-}
-
 function shouldArchiveToS3(record) {
   if (!("NewImage" in record.dynamodb)) {
     console.warn(`Archiving skipped, no new content available for ${record.dynamodb.OldImage.id.S}`);
@@ -80,22 +52,8 @@ function shouldArchiveToS3(record) {
 }
 
 module.exports.handler = async event => {
-  let records = await Promise.all(
-    event.Records.map(
-      async record => {
-        if ("OldImage" in record.dynamodb) {
-          record.dynamodb.OldImage = await migrateRecordImage(record.dynamodb.OldImage);
-        }
-        if ("NewImage" in record.dynamodb) {
-          record.dynamodb.NewImage = await migrateRecordImage(record.dynamodb.NewImage);
-        }
-        return record;
-      }
-    )
-  );
-
   return Promise.all(
-    records
+    event.Records
       .filter(shouldArchiveToS3)
       .map(archiveToS3)
   );
