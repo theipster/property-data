@@ -30,7 +30,7 @@ functions:
       - eventBridge:
           pattern:
             source:
-              - property-data.zoopla-sale-advert-schedule
+              - prefix: property-data.
             detail-type:
               - SNAPSHOT_REQUESTED
     layers:
