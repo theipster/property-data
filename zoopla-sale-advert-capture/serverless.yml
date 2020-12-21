@@ -14,6 +14,9 @@ provider:
     - Action: dynamodb:PutItem
       Effect: Allow
       Resource: !GetAtt ZooplaSaleAdvertsIndexTable.Arn
+    - Action: sqs:SendMessage
+      Effect: Allow
+      Resource: !GetAtt ZooplaSaleAdvertsCaptureDLQ.Arn
   logRetentionInDays: 14
 
 functions:
@@ -42,6 +45,21 @@ resources:
       Export:
         Name: ZooplaSaleAdvertsIndexTableStreamArn
   Resources:
+    CaptureLambdaEvConf:
+      Type: AWS::Lambda::EventInvokeConfig
+      Properties:
+        DestinationConfig:
+          OnFailure:
+            Destination: !GetAtt ZooplaSaleAdvertsCaptureDLQ.Arn
+        FunctionName: !Ref CaptureLambdaFunction
+        Qualifier: $LATEST
+    ZooplaSaleAdvertsCaptureDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        ReceiveMessageWaitTimeSeconds: 20
+        Tags:
+          - Key: DLQ
+            Value: true
     ZooplaSaleAdvertsIndexTable:
       Type: AWS::DynamoDB::Table
       Properties:
