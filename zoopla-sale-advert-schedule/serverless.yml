@@ -34,7 +34,7 @@ functions:
       - eventBridge:
           pattern:
             source:
-              - property-data.advert-urls
+              - prefix: property-data.
             detail-type:
               - ZOOPLA_SALE_ADVERT_IDENTIFIED
     layers:
