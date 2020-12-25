@@ -8,8 +8,6 @@ provider:
     SERVICE: ${self:service}
   tracing:
     lambda: true
-  iamManagedPolicies:
-    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
         - dynamodb:PutItem
@@ -28,8 +26,6 @@ functions:
       - stream:
           type: dynamodb
           arn: !ImportValue ZooplaSaleAdvertsIndexTableStreamArn
-    layers:
-      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
     memorySize: 256
     reservedConcurrency: 1
 

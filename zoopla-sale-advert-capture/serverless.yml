@@ -8,8 +8,6 @@ provider:
     SERVICE: ${self:service}
   tracing:
     lambda: true
-  iamManagedPolicies:
-    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action: dynamodb:PutItem
       Effect: Allow
@@ -33,8 +31,6 @@ functions:
               - prefix: property-data.
             detail-type:
               - SNAPSHOT_REQUESTED
-    layers:
-      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
     memorySize: 256
     reservedConcurrency: 1      # Set to zero to throttle for emergencies.
 
