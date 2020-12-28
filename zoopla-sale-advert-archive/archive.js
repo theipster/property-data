@@ -9,16 +9,19 @@ const s3 = new AWS.S3({
 async function archiveToS3(record) {
   let { id, contentGzip, contentMd5 } = record.dynamodb.NewImage;
   let content = Buffer.from(contentGzip.B, "base64");
+  let contentLength = Buffer.byteLength(content);
 
   let putPromise = s3.putObject({
     Body: content,
+    ContentEncoding: "gzip",
+    ContentLength: contentLength,
     ContentMD5: contentMd5.S,
     ContentType: "text/html",
     Key: `details/${id.S}.html.gz`
   }).promise();
 
   return putPromise.then(response => {
-    console.log(`Archived ${id.S}, ${Buffer.byteLength(content)} bytes.`);
+    console.log(`Archived ${id.S}, ${contentLength} bytes.`);
 
     let deletePromise = s3.deleteObject({
       Key: `details/${id.S}.html`
