@@ -1,0 +1,10 @@
+env:
+  es2017: true
+  node: true
+extends: eslint:recommended
+parserOptions:
+  ecmaVersion: 2019
+rules:
+  no-unused-vars:
+    - error
+    - argsIgnorePattern: ^_
