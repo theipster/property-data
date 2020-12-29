@@ -2,6 +2,8 @@ service: zoopla-sale-advert-archive
 frameworkVersion: '2'
 
 provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
   name: aws
   runtime: nodejs12.x
   tags:
