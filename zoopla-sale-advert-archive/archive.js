@@ -20,14 +20,14 @@ async function archiveToS3(record) {
     Key: `details/${id.S}.html.gz`
   }).promise();
 
-  return putPromise.then(response => {
+  return putPromise.then(_ => {
     console.log(`Archived ${id.S}, ${contentLength} bytes.`);
 
     let deletePromise = s3.deleteObject({
       Key: `details/${id.S}.html`
     }).promise();
 
-    return deletePromise.then(response => {
+    return deletePromise.then(_ => {
       console.log(`LEGACY: ensured old archive for ${id.S} no longer exists.`);
     });
   });
