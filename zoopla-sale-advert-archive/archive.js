@@ -24,7 +24,7 @@ async function archiveToS3(record) {
       Key: `details/${id.S}.html`
     }).promise();
 
-    return deletePromise.then(_ => {
+    return deletePromise.then(foo => {
       console.log(`LEGACY: ensured old archive for ${id.S} no longer exists.`);
     });
   });
