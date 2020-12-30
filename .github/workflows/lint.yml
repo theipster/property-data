@@ -10,7 +10,7 @@ on:
 
 jobs:
   eslint:
-    name: 🧹 ESLint
+    name: ESLint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
