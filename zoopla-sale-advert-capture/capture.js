@@ -1,6 +1,9 @@
 'use strict';
 
 const AWS = require("aws-sdk"),
+  { createHash } = require("crypto"),
+  { gzip } = require("zlib"),
+  { promisify } = require("util"),
   { get } = require("https.js");
 
 const dynamodb = new AWS.DynamoDB({
@@ -8,6 +11,8 @@ const dynamodb = new AWS.DynamoDB({
     TableName: process.env.INDEX_TABLE
   }
 });
+
+const promisifiedGzip = promisify(gzip);
 
 const NORMALIZERS = [
 
@@ -35,6 +40,18 @@ function normalize(body) {
 }
 
 async function putIndexItem(id, body, now) {
+  let compressed = await promisifiedGzip(body)
+    .then(
+      compressed => {
+        console.log(`Downloaded compressed to ${Buffer.byteLength(compressed)} bytes.`);
+        return compressed;
+      }
+    );
+
+  let md5 = createHash("md5")
+    .update(compressed)
+    .digest("base64");
+
   return dynamodb.putItem({
     Item: {
       id: {
@@ -43,8 +60,11 @@ async function putIndexItem(id, body, now) {
       time: {
         N: now.toString()
       },
-      content: {
-        S: body
+      contentGzip: {
+        B: compressed
+      },
+      contentMd5: {
+        S: md5
       }
     }
   }).promise();

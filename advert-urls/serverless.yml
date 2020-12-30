@@ -2,14 +2,14 @@ service: advert-urls
 frameworkVersion: '2'
 
 provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
   name: aws
   runtime: nodejs12.x
   tags:
     SERVICE: ${self:service}
   tracing:
     lambda: true
-  iamManagedPolicies:
-    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action:
         - events:PutEvents
@@ -29,8 +29,6 @@ functions:
       - stream:
           type: dynamodb
           arn: !GetAtt UrlsTable.StreamArn
-    layers:
-      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
     memorySize: 256
     reservedConcurrency: 1
 

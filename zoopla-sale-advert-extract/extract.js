@@ -1,12 +1,16 @@
 'use strict';
 
-const AWS = require("aws-sdk");
+const AWS = require("aws-sdk"),
+  { gunzip } = require("zlib"),
+  { promisify } = require("util");
 
 const dynamodb = new AWS.DynamoDB({
   params: {
     TableName: process.env.DATA_LAKE_TABLE
   }
 });
+
+const promisifiedGunzip = promisify(gunzip);
 
 const MATCHERS = {
   ID: /^details\/([0-9]+)\.html$/,
@@ -16,14 +20,17 @@ const MATCHERS = {
 };
 
 async function extractToDataLake(record) {
-  let { id, time, content } = record.dynamodb.NewImage;
+  let { id, time, contentGzip } = record.dynamodb.NewImage;
 
   console.log(`Extracting ${id.S}, snapshot from ${time.N}`);
+
+  // Decompress
+  let content = await promisifiedGunzip(Buffer.from(contentGzip.B, "base64"));
 
   // Parse snapshot content
   let snapshotItem = sanitiseItem(
     parseSnapshot(
-      content.S,
+      content,
       MATCHERS
     )
   );

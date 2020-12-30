@@ -2,16 +2,18 @@ service: zoopla-sale-advert-archive
 frameworkVersion: '2'
 
 provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
   name: aws
   runtime: nodejs12.x
   tags:
     SERVICE: ${self:service}
   tracing:
     lambda: true
-  iamManagedPolicies:
-    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
-    - Action: s3:PutObject
+    - Action:
+      - s3:DeleteObject
+      - s3:PutObject
       Effect: Allow
       Resource:
         Fn::Join:
@@ -31,8 +33,6 @@ functions:
       - stream:
           type: dynamodb
           arn: !ImportValue ZooplaSaleAdvertsIndexTableStreamArn
-    layers:
-      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
     memorySize: 256
     reservedConcurrency: 1
 

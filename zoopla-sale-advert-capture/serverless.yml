@@ -2,18 +2,21 @@ service: zoopla-sale-advert-capture
 frameworkVersion: '2'
 
 provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
   name: aws
   runtime: nodejs12.x
   tags:
     SERVICE: ${self:service}
   tracing:
     lambda: true
-  iamManagedPolicies:
-    - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
   iamRoleStatements:
     - Action: dynamodb:PutItem
       Effect: Allow
       Resource: !GetAtt ZooplaSaleAdvertsIndexTable.Arn
+    - Action: sqs:SendMessage
+      Effect: Allow
+      Resource: !GetAtt ZooplaSaleAdvertsCaptureDLQ.Arn
   logRetentionInDays: 14
 
 functions:
@@ -27,11 +30,9 @@ functions:
       - eventBridge:
           pattern:
             source:
-              - property-data.zoopla-sale-advert-schedule
+              - prefix: property-data.
             detail-type:
               - SNAPSHOT_REQUESTED
-    layers:
-      - arn:aws:lambda:${self:provider.region}:580247275435:layer:LambdaInsightsExtension:12
     memorySize: 256
     reservedConcurrency: 1      # Set to zero to throttle for emergencies.
 
@@ -42,6 +43,21 @@ resources:
       Export:
         Name: ZooplaSaleAdvertsIndexTableStreamArn
   Resources:
+    CaptureLambdaEvConf:
+      Type: AWS::Lambda::EventInvokeConfig
+      Properties:
+        DestinationConfig:
+          OnFailure:
+            Destination: !GetAtt ZooplaSaleAdvertsCaptureDLQ.Arn
+        FunctionName: !Ref CaptureLambdaFunction
+        Qualifier: $LATEST
+    ZooplaSaleAdvertsCaptureDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        ReceiveMessageWaitTimeSeconds: 20
+        Tags:
+          - Key: DLQ
+            Value: true
     ZooplaSaleAdvertsIndexTable:
       Type: AWS::DynamoDB::Table
       Properties:
