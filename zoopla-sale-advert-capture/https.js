@@ -1,3 +1,5 @@
+'use strict';
+
 const https = require("https");
 
 class HttpError extends Error {
