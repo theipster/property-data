@@ -1,0 +1,46 @@
+service: geographical-areas
+frameworkVersion: '2'
+
+provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    EVENT_BUS: default
+    EVENT_SOURCE: property-data.${self:service}
+  iamRoleStatements:
+    - Action: events:PutEvents
+      Effect: Allow
+      Resource: 'arn:aws:events:*:*:event-bus/*'
+  logRetentionInDays: 14
+  memorySize: 256
+  name: aws
+  runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
+  tracing:
+    lambda: true
+
+functions:
+  notify:
+    description: |
+      Given a geographical area: emit a GEOGRAPHICAL_AREA_IDENTIFIED event.
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt AreasTable.StreamArn
+    handler: notify.handler
+    reservedConcurrency: 1
+
+resources:
+  Resources:
+    AreasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: polyline
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: polyline
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: KEYS_ONLY
