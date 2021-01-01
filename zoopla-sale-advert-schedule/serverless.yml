@@ -11,7 +11,9 @@ provider:
   tracing:
     lambda: true
   iamRoleStatements:
-    - Action: dynamodb:PutItem
+    - Action:
+      - dynamodb:GetItem
+      - dynamodb:PutItem
       Effect: Allow
       Resource: !GetAtt ZooplaSaleAdvertsSchedule.Arn
     - Action: events:PutEvents
@@ -23,7 +25,7 @@ functions:
   new:
     handler: handler.newHandler
     description: |
-      Given a ZOOPLA_SALE_ADVERT_IDENTIFIED event: emits a SNAPSHOT_REQUESTED event, and schedules the next snapshot.
+      Given a de-duped ZOOPLA_SALE_ADVERT_IDENTIFIED event: emits a SNAPSHOT_REQUESTED event, and schedules the next snapshot.
     environment:
       EVENT_BUS: default
       EVENT_SOURCE: property-data.${self:service}
