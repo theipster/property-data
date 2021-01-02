@@ -66,7 +66,7 @@ async function scheduleRepeat(id, now, env) {
 module.exports.newHandler = async event => {
   let id = event.detail.id;
   let now = Math.floor(new Date().getTime() / 1000);
-  console.log(`Scheduler requesting new snapshot for ${id}`);
+  console.log(`Scheduler requesting new snapshot for ${id} (source: ${event.source})`);
 
   if (await alreadyScheduled(id, env)) {
     console.log(`Scheduler found an existing entry for ${id}, skipped.`);
