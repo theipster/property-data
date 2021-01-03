@@ -44,5 +44,7 @@ resources:
         KeySchema:
           - AttributeName: url
             KeyType: HASH
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
         StreamSpecification:
           StreamViewType: KEYS_ONLY
