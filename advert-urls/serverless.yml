@@ -28,13 +28,13 @@ functions:
     events:
       - stream:
           type: dynamodb
-          arn: !GetAtt UrlsTable.StreamArn
+          arn: !GetAtt Urls.StreamArn
     memorySize: 256
     reservedConcurrency: 1
 
 resources:
   Resources:
-    UrlsTable:
+    Urls:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
@@ -46,4 +46,3 @@ resources:
             KeyType: HASH
         StreamSpecification:
           StreamViewType: KEYS_ONLY
-        TableName: advert-urls
