@@ -42,5 +42,7 @@ resources:
         KeySchema:
           - AttributeName: polyline
             KeyType: HASH
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
         StreamSpecification:
           StreamViewType: KEYS_ONLY

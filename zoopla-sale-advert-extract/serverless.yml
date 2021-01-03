@@ -47,3 +47,5 @@ resources:
             KeyType: HASH
           - AttributeName: time
             KeyType: RANGE
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
