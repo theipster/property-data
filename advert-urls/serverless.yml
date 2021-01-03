@@ -15,6 +15,9 @@ provider:
         - events:PutEvents
       Effect: Allow
       Resource: 'arn:aws:events:*:*:event-bus/*'
+    - Action: sqs:SendMessage
+      Effect: Allow
+      Resource: !GetAtt DLQ.Arn
   logRetentionInDays: 14
 
 functions:
@@ -30,10 +33,18 @@ functions:
           type: dynamodb
           arn: !GetAtt Urls.StreamArn
     memorySize: 256
+    onError: !GetAtt DLQ.Arn
     reservedConcurrency: 1
 
 resources:
   Resources:
+    DLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        ReceiveMessageWaitTimeSeconds: 20
+        Tags:
+          - Key: DLQ
+            Value: true
     Urls:
       Type: AWS::DynamoDB::Table
       Properties:
