@@ -11,9 +11,7 @@ provider:
   tracing:
     lambda: true
   iamRoleStatements:
-    - Action:
-      - s3:DeleteObject
-      - s3:PutObject
+    - Action: s3:PutObject
       Effect: Allow
       Resource:
         Fn::Join:
