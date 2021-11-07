@@ -3,6 +3,10 @@
 const https = require("https"),
   querystring = require("querystring");
 
+const headers = {
+  "User-Agent": process.env.HTTP_USER_AGENT,
+};
+
 class HttpError extends Error {
   constructor(response) {
     super(`Download failed: HTTP ${response.statusCode}.`);
@@ -11,6 +15,43 @@ class HttpError extends Error {
   }
 }
 
+async function get(url, data) {
+  const fullUrl = typeof data == "undefined"
+    ? url
+    : `${url}?${querystring.stringify(data)}`;
+
+  return new Promise((resolve, reject) => {
+    console.log(`Downloading URL ${fullUrl}...`);
+
+    const request = https.request(
+      fullUrl,
+      {
+        headers,
+        method: "GET",
+      },
+      response => {
+        if (response.statusCode != 200) {
+          response.resume();
+          throw new HttpError(response);
+        }
+
+        let body = "";
+        response.on("data", data => {
+          body += data;
+        });
+
+        response.on("end", () => {
+          console.log(`Downloaded ${Buffer.byteLength(body)} bytes.`);
+          resolve(body);
+        });
+      }
+    );
+    request.on("error", reject);
+    request.end();
+  });
+}
+
+// TODO: deprecated
 async function post(url, data) {
   return new Promise((resolve, reject) => {
     let postData = querystring.stringify(data);
@@ -22,6 +63,7 @@ async function post(url, data) {
       url,
       {
         headers: {
+          ...headers,
           "Content-Type": "application/x-www-form-urlencoded",
           "Content-Length": postDataLength
         },
@@ -61,4 +103,4 @@ async function post(url, data) {
   });
 }
 
-module.exports.post = post;
+module.exports = { get, post };

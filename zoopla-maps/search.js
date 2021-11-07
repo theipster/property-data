@@ -2,39 +2,73 @@
 
 const EventBridge = require("aws-sdk/clients/eventbridge"),
   { batchPutEvents } = require("lib/eventBridge.js"),
-  { post } = require("lib/https.js"),
+  { get } = require("lib/https.js"),
   { unique } = require("lib/utils.js");
 
 const eventBridge = new EventBridge();
 
+const PAGE_SIZE = 25;
 const { EVENT_BUS, EVENT_SOURCE } = process.env;
-
-function extractAdvertIds(results) {
-  if (!("listings" in results)
-    || !Array.isArray(results.listings)
-    || !results.listings.every(item => "listing_id" in item)
-  ) {
-    throw new Error("Map search results corrupt.");
-  }
-
-  console.log(`Map search results passed basic validation: found ${results.listings.length} listings.`);
-  return results.listings.map(item => item.listing_id);
-}
 
 function messageToPolyline(record) {
   const body = JSON.parse(record.body);
   return body.id;
 }
 
+function parseAdvertIds(json) {
+  const ids = json.props.pageProps.initialProps.searchResults.listings.regular.map(item => item.listingId);
+  console.log(`Parsed ${ids.length} adverts.`);
+  return ids;
+}
+
+function parseAdvertListingsData(html) {
+  const data = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*)<\/script>/);
+  if (data == null) {
+    throw new Error("Map search results corrupt (no data).");
+  }
+  const json = JSON.parse(data[1]);
+  if (json == null) {
+    throw new Error("Map search results corrupt (invalid JSON).");
+  }
+  return json;
+}
+
+function parseNumPages(json) {
+  const numResults = json.props.pageProps.initialProps.searchResults.pagination.totalResults;
+  return Math.ceil(numResults / PAGE_SIZE);
+}
+
 function searchForAdverts(section) {
-  return async polyline => {
-    const postParams = {
-      polyenc: [ polyline ],
-      q: "",
-      section
+  return async polyenc => {
+    const url = `https://www.zoopla.co.uk/${section}/property/uk/`;
+    const params = {
+      page_size: PAGE_SIZE,
+      polyenc,
     };
-    return post("https://www.zoopla.co.uk/ajax/maps/listings", postParams)
-      .then(extractAdvertIds);
+    return get(url, params)
+      .then(html => {
+        const json = parseAdvertListingsData(html);
+        const numPages = parseNumPages(json);
+        console.log(`Expecting total of ${numPages} pages.`);
+        return Promise.all([
+
+          // Current page (no need to re-fetch page)
+          Promise.resolve(parseAdvertIds(json)),
+
+          // Any other pages
+          ...Array.from({ length: numPages - 1 }, (_, i) => i + 2)
+            .map(pageIdx => {
+              return get(url, { ...params, pn: pageIdx })
+                .then(html => {
+                  const json = parseAdvertListingsData(html);
+                  return Promise.resolve(parseAdvertIds(json));
+                }).catch(error => {
+                  console.error(`Failed to fetch page ${pageIdx}: ${error}.`);
+                  throw error;
+                });
+            }),
+        ]);
+      });
   };
 }
 
