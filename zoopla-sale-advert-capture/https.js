@@ -2,6 +2,10 @@
 
 const https = require("https");
 
+const headers = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36 Edg/95.0.1020.40",
+};
+
 class HttpError extends Error {
   constructor(response) {
     super(`Download failed: HTTP ${response.statusCode}.`);
@@ -16,6 +20,9 @@ async function get(url) {
 
     https.get(
       url,
+      {
+        headers,
+      },
       response => {
         let { headers, statusCode } = response;
 
