@@ -82,7 +82,7 @@ module.exports.handler = async event => {
   let id = event.detail.id;
   let now = Math.floor(new Date().getTime() / 1000);
 
-  let body = await get(`https://www.zoopla.co.uk/for-sale/details/${id}`);
+  let body = await get(`https://www.zoopla.co.uk/for-sale/details/${id}/`);
   validate(body);
   let normalized = normalize(body);
   return putIndexItem(id, normalized, now);
