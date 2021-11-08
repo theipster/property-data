@@ -9,8 +9,15 @@ const headers = {
 class HttpError extends Error {
   constructor(response) {
     super(`Download failed: HTTP ${response.statusCode}.`);
-    this.errorType = "HttpError";
+    this.name = "HttpError";
     this.httpResponseHeaders = response.headers;
+  }
+}
+
+class ExpiredError extends HttpError {
+  constructor(response) {
+    super(response);
+    this.name = "ExpiredError";
   }
 }
 
@@ -35,7 +42,16 @@ async function get(url) {
 
         if (statusCode != 200) {
           response.resume();
-          throw new HttpError(response);
+
+          // Expired?
+          if (statusCode == 301
+            && headers.location.endsWith("/#expired")
+          ) {
+            return reject(new ExpiredError(response));
+          }
+
+          // Unknown failure
+          return reject(new HttpError(response));
         }
 
         let body = "";
