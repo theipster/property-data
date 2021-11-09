@@ -14,29 +14,10 @@ const dynamodb = new AWS.DynamoDB({
 
 const promisifiedGzip = promisify(gzip);
 
-const NORMALIZERS = [
-
-  // A/B test
-  /ZPG\.(trackData\.ab|flags) = {.*?};/g,
-
-  // Page view count
-  /[0-9]+ page views/,
-
-  // Recent sales
-  /<li class="dp-recent-sales__row-item( |").*?<\/li>/gs,
-
-  // Rental estimates
-  /£[0-9,]+ pcm/,
-
-  // Similar properties
-  /<article class="ui-property-card">.*?<\/article>/gs
-];
-
 function normalize(body) {
-  return NORMALIZERS.reduce(
-    (normalized, regex) => normalized.replace(regex, ""),
-    body
-  );
+  return body
+    .replace(/<style data-emotion="css .*<\/style>/gs, "")
+    .replace(/"optimizelyUserInfo":{"id":"[0-f-]{36}",/, '"optimizelyUserInfo":{"id":"<id>",');
 }
 
 async function putIndexItem(id, body, now) {
@@ -71,7 +52,7 @@ async function putIndexItem(id, body, now) {
 }
 
 function validate(body) {
-  if (!body.includes("ZPG.trackData.taxonomy = {")) {
+  if (!body.includes('<script id="__NEXT_DATA__" type="application/json">')) {
     throw new Error("Downloaded content failed basic validation.");
   }
 
