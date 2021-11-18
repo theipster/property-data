@@ -4,15 +4,35 @@ const AWS = require("aws-sdk"),
   { createHash } = require("crypto"),
   { gzip } = require("zlib"),
   { promisify } = require("util"),
-  { get } = require("https.js");
+  { ExpiredError, get } = require("https.js");
 
 const dynamodb = new AWS.DynamoDB({
   params: {
     TableName: process.env.INDEX_TABLE
   }
 });
-
+const env = process.env;
+const eventBridge = new AWS.EventBridge();
 const promisifiedGzip = promisify(gzip);
+
+async function capture(id, now) {
+  let body = await get(`https://www.zoopla.co.uk/for-sale/details/${id}/`);
+  validate(body);
+  let normalized = normalize(body);
+  return putIndexItem(id, normalized, now);
+}
+
+async function expire(id, env) {
+  console.log(`Marking Zoopla advert ${id} as expired.`);
+  return eventBridge.putEvents({
+    Entries: [{
+      Detail: JSON.stringify({ id }),
+      DetailType: "ZOOPLA_SALE_ADVERT_EXPIRED",
+      EventBusName: env.EVENT_BUS,
+      Source: env.EVENT_SOURCE,
+    }],
+  }).promise();
+}
 
 function normalize(body) {
   return body
@@ -63,8 +83,12 @@ module.exports.handler = async event => {
   let id = event.detail.id;
   let now = Math.floor(new Date().getTime() / 1000);
 
-  let body = await get(`https://www.zoopla.co.uk/for-sale/details/${id}/`);
-  validate(body);
-  let normalized = normalize(body);
-  return putIndexItem(id, normalized, now);
+  return capture(id, now)
+    .catch(error => {
+      if (error instanceof ExpiredError) {
+        return expire(id, env);
+      } else {
+        throw error;
+      }
+    });
 };

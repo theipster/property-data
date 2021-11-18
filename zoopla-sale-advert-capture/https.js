@@ -77,4 +77,4 @@ async function get(url) {
   });
 }
 
-module.exports.get = get;
+module.exports = { ExpiredError, get };

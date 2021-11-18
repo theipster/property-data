@@ -14,6 +14,9 @@ provider:
     - Action: dynamodb:PutItem
       Effect: Allow
       Resource: !GetAtt ZooplaSaleAdvertsIndexTable.Arn
+    - Action: events:PutEvents
+      Effect: Allow
+      Resource: arn:aws:events:*:*:event-bus/*
     - Action: sqs:SendMessage
       Effect: Allow
       Resource: !GetAtt ZooplaSaleAdvertsCaptureDLQ.Arn
@@ -23,8 +26,10 @@ functions:
   capture:
     handler: capture.handler
     description: |
-      Given a SNAPSHOT_REQUESTED event: takes a snapshot of the page, then indexes it.
+      Given a SNAPSHOT_REQUESTED event: takes a snapshot of the page, then indexes it. Expired adverts emit a ZOOPLA_SALE_ADVERT_EXPIRED event.
     environment:
+      EVENT_BUS: default
+      EVENT_SOURCE: property-data.${self:service}
       INDEX_TABLE: !Ref ZooplaSaleAdvertsIndexTable
     events:
       - eventBridge:
