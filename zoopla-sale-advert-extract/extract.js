@@ -14,6 +14,7 @@ const promisifiedGunzip = promisify(gunzip);
 
 const MATCHERS = {
   ID: /^details\/([0-9]+)\.html$/,
+  NEW_UNSTRUCTURED_JSON: /<script id="__NEXT_DATA__" type="application\/json">({.*?})<\/script>/s,
   STRUCTURED_JSON: /<script type="application\/ld\+json">(.*?)<\/script>/s,
   UNSTRUCTURED_JSON: /ZPG.trackData.taxonomy = ({.*?});/s,
   UNSTRUCTURED_JSON_TIDY: / +([a-z_]+):/g
@@ -56,14 +57,33 @@ function parseSnapshot(content, matchers) {
     && ("@graph" in json)
   ) {
     let residence = json["@graph"].filter(it => it["@type"] == "Residence")[0];
-    item.latitude = { N: residence.geo.latitude };
-    item.longitude = { N: residence.geo.longitude };
+    item.latitude = { N: residence.geo.latitude.toString() };
+    item.longitude = { N: residence.geo.longitude.toString() };
   } else {
     console.warn("Could not parse structured JSON.");
   }
 
   // Parse less-structured JSON
-  if ((jsonMatches = matchers.UNSTRUCTURED_JSON.exec(content))
+  if ((jsonMatches = matchers.NEW_UNSTRUCTURED_JSON.exec(content))
+    && (json = JSON.parse(jsonMatches[1]).props.pageProps.data.listingDetails.analyticsTaxonomy)) {
+    item.address = { S: json.displayAddress };
+    item.askingPrice = { N: json.price.toString() };
+    if (json.numBaths) {
+      item.bathrooms = { N: json.numBaths.toString() };
+    }
+    item.bedrooms = { N: json.numBeds.toString() };
+    item.postcodeInward = { S: json.incode };
+    item.postcodeOutward = { S: json.outcode };
+    item.propertyType = { S: json.propertyType };
+    item.retirement = { BOOL: json.isRetirementHome };
+    item.sharedOwnership = { BOOL: json.isSharedOwnership };
+    item.status = { S: json.listingStatus };
+    if (json.tenure) {
+      item.tenure = { S: json.tenure };
+    }
+
+  // Legacy page format
+  } else if ((jsonMatches = matchers.UNSTRUCTURED_JSON.exec(content))
     && (json = JSON.parse(jsonMatches[1].replace(matchers.UNSTRUCTURED_JSON_TIDY, ' "$1":')))
   ) {
     item.address = { S: json.display_address };
