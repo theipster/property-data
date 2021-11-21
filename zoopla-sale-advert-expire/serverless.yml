@@ -1,0 +1,50 @@
+service: zoopla-sale-advert-expire
+frameworkVersion: '2'
+
+provider:
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+  name: aws
+  runtime: nodejs12.x
+  tags:
+    SERVICE: ${self:service}
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Action: sqs:SendMessage
+      Effect: Allow
+      Resource: !GetAtt ExpireDLQ.Arn
+  logRetentionInDays: 14
+
+functions:
+  expire:
+    handler: index.expire
+    description: |
+      Given a ZOOPLA_SALE_ADVERT_EXPIRED event: [TODO].
+    events:
+      - eventBridge:
+          pattern:
+            source:
+              - prefix: property-data.
+            detail-type:
+              - ZOOPLA_SALE_ADVERT_EXPIRED
+    memorySize: 256
+    reservedConcurrency: 1  # Set to zero to throttle for emergencies.
+
+resources:
+  Resources:
+    ExpireDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        ReceiveMessageWaitTimeSeconds: 20
+        Tags:
+          - Key: DLQ
+            Value: true
+    ExpireLambdaEvConf:
+      Type: AWS::Lambda::EventInvokeConfig
+      Properties:
+        DestinationConfig:
+          OnFailure:
+            Destination: !GetAtt ExpireDLQ.Arn
+        FunctionName: !Ref ExpireLambdaFunction
+        Qualifier: $LATEST
