@@ -33,21 +33,22 @@ async function get(url) {
       response => {
         let { headers, statusCode } = response;
 
-        // Follow whitelisted redirects
-        if (statusCode == 301
-          && headers.location.startsWith("https://www.zoopla.co.uk/new-homes/details/")
-        ) {
-          return resolve(get(headers.location));
-        }
-
         if (statusCode != 200) {
           response.resume();
 
-          // Expired?
-          if (statusCode == 301
-            && headers.location.endsWith("/#expired")
-          ) {
-            return reject(new ExpiredError(response));
+          // Redirect? Only if whitelisted.
+          if (statusCode == 301) {
+            const redirectUrl = new URL(headers.location, url).href;
+
+            // New homes
+            if (redirectUrl.startsWith("https://www.zoopla.co.uk/new-homes/details/")) {
+              return resolve(get(redirectUrl));
+            }
+
+            // Expired?
+            if (redirectUrl.startsWith("https://www.zoopla.co.uk/") && redirectUrl.endsWith("/#expired")) {
+              return reject(new ExpiredError(response));
+            }
           }
 
           // Unknown failure
