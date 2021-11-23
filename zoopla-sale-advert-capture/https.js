@@ -14,6 +14,13 @@ class HttpError extends Error {
   }
 }
 
+class CommercialPropertyError extends HttpError {
+  constructor(response) {
+    super(response);
+    this.name = "CommercialPropertyError";
+  }
+}
+
 class ExpiredError extends HttpError {
   constructor(response) {
     super(response);
@@ -49,6 +56,11 @@ async function get(url) {
             if (redirectUrl.startsWith("https://www.zoopla.co.uk/") && redirectUrl.endsWith("/#expired")) {
               return reject(new ExpiredError(response));
             }
+
+            // Commercial properties are irrelevant.
+            if (redirectUrl.startsWith("https://www.zoopla.co.uk/for-sale/commercial/details/")) {
+              return reject(new CommercialPropertyError(response));
+            }
           }
 
           // Unknown failure
@@ -78,4 +90,4 @@ async function get(url) {
   });
 }
 
-module.exports = { ExpiredError, get };
+module.exports = { CommercialPropertyError, ExpiredError, get };
