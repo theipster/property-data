@@ -21,7 +21,7 @@ Resources:
         - !Ref GitHubOIDCThumbprint
       Url: https://token.actions.githubusercontent.com
 
-  Role:
+  ServerlessFrameworkRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
