@@ -1,0 +1,35 @@
+name: 🚀 Deploy
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  SERVERLESS_FRAMEWORK_VERSION: 2.65.0
+
+jobs:
+  deploy:
+    name: Deploy
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/$GITHUB_REPOSITORY
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - run: npm install -g serverless@${{ env.SERVERLESS_FRAMEWORK_VERSION }}
+
+      - run: sh deploy-all.sh

@@ -1,0 +1,41 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  GitHubOIDCThumbprint:
+    Type: String
+    MaxLength: 40
+    MinLength: 40
+  GitHubRepoOwner:
+    Type: String
+  GitHubRepoName:
+    Type: String
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - !Ref GitHubOIDCThumbprint
+      Url: https://token.actions.githubusercontent.com
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:sub": !Sub "repo:${GitHubRepoOwner}/${GitHubRepoName}:ref:refs/heads/main"
+                "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+      Path: !Sub "/${GitHubRepoOwner}/"
+      RoleName: !Ref GitHubRepoName
