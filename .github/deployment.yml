@@ -35,7 +35,33 @@ Resources:
                 "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
             Principal:
               Federated: !Ref GitHubOIDCProvider
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
       Path: !Sub "/${GitHubRepoOwner}/"
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action: cloudformation:*
+                Effect: Allow
+                Resource: "*"
+              - Action: s3:ListBucket
+                Effect: Allow
+                Resource: "arn:aws:s3:::*-serverlessdeploy*-*"
+              - Action: s3:*
+                Effect: Allow
+                Resource: "arn:aws:s3:::*-serverlessdeploy*-*/serverless/*/dev/*/*"
+          PolicyName: CloudFormationInvocation
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - dynamodb:*
+                  - iam:GetRole
+                  - lambda:*
+                  - sqs:*
+                Effect: Allow
+                Condition:
+                  StringEquals:
+                    "aws:CalledViaLast": "cloudformation.amazonaws.com"
+                Resource: "*"
+          PolicyName: CloudFormationExecution
       RoleName: !Ref GitHubRepoName
