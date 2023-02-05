@@ -43,6 +43,9 @@ Resources:
               - Action: cloudformation:*
                 Effect: Allow
                 Resource: "*"
+              - Action: lambda:GetFunction
+                Effect: Allow
+                Resource: "*"
               - Action: s3:ListBucket
                 Effect: Allow
                 Resource: "arn:aws:s3:::*-serverlessdeploy*-*"
