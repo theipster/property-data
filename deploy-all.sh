@@ -10,7 +10,7 @@ logdir=`realpath "$logdir"`
 
 # Run serverless deploy
 find "$basedir" -type f -name "serverless.yml" -exec dirname {} \; \
-    | xargs -I {} -P 0 bash --login -O expand_aliases -c "cd {}; service=\$(basename {}); echo \"Deploying \$service...\"; serverless -r $AWS_REGION deploy $@ > \"$logdir/\$service.log\"" \
+    | xargs -I {} -P 0 bash --login -O expand_aliases -c "cd {}; service=\$(basename {}); echo \"Deploying \$service...\"; SLS_DEBUG=1 serverless deploy -r $AWS_REGION $@ > \"$logdir/\$service.log\"" \
     && echo "Deployed. 🚀" \
     || echo "Deployment failed. Logs: $logdir"
 
