@@ -8,8 +8,6 @@ provider:
   runtime: nodejs12.x
   tags:
     SERVICE: ${self:service}
-  tracing:
-    lambda: true
   iamRoleStatements:
     - Action:
         - dynamodb:PutItem
