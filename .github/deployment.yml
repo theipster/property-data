@@ -58,7 +58,7 @@ Resources:
             Statement:
               - Action:
                   - dynamodb:*
-                  - iam:GetRole
+                  - iam:*Role*
                   - lambda:*
                   - sqs:*
                 Effect: Allow
