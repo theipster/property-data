@@ -14,28 +14,24 @@ const GRAPHQL_TEMPLATE = readFileSync("graphql.json", "utf8");
 
 function extractAdvertIds(results) {
   if (!("data" in results)
-    || !Array.isArray(results.data)
     || !("searchResults" in results.data)
-    || !Array.isArray(results.data.searchResults)
     || !("listings" in results.data.searchResults)
-    || !Array.isArray(results.data.searchResults.listings)
   ) {
     throw new Error("Map search results (wrapper) corrupt.");
   }
 
-  const listingIds = []
-  const listingsByType = results.data.searchResults.listings
-  for (const listingType of ["regular", "featured", "extended"]) {
-    const typeListings = listingsByType[listingType];
-    if (!typeListings.every(item => "listingId" in item)) {
-      throw new Error(`Map search results (listingsByType[${listingType}]) corrupt.`);
-    }
-
-    listingIds.concat(typeListings.map(item => item.listingId))
+  const listingsByType = results.data.searchResults.listings;
+  const listings = [
+    ...listingsByType.regular,
+    ...listingsByType.featured,
+    ...listingsByType.extended,
+  ];
+  if (!listings.every(item => "listingId" in item)) {
+    throw new Error(`Map search results (listings) corrupt.`);
   }
 
-  console.log(`Map search results passed basic validation: found ${results.listings.length} listings.`);
-  return listingIds;
+  console.log(`Map search results passed basic validation: found ${listings.length} listings.`);
+  return listings.map(item => item.listingId);
 }
 
 function messageToPolyline(record) {
