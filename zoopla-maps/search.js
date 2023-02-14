@@ -1,6 +1,7 @@
 'use strict';
 
 const EventBridge = require("aws-sdk/clients/eventbridge"),
+  { readFileSync } = require("fs"),
   { batchPutEvents } = require("lib/eventBridge.js"),
   { post } = require("lib/https.js"),
   { unique } = require("lib/utils.js");
@@ -9,16 +10,32 @@ const eventBridge = new EventBridge();
 
 const { EVENT_BUS, EVENT_SOURCE } = process.env;
 
+const GRAPHQL_TEMPLATE = readFileSync("graphql.json", "utf8");
+
 function extractAdvertIds(results) {
-  if (!("listings" in results)
-    || !Array.isArray(results.listings)
-    || !results.listings.every(item => "listing_id" in item)
+  if (!("data" in results)
+    || !Array.isArray(results.data)
+    || !("searchResults" in results.data)
+    || !Array.isArray(results.data.searchResults)
+    || !("listings" in results.data.searchResults)
+    || !Array.isArray(results.data.searchResults.listings)
   ) {
-    throw new Error("Map search results corrupt.");
+    throw new Error("Map search results (wrapper) corrupt.");
+  }
+
+  const listingIds = []
+  const listingsByType = results.data.searchResults.listings
+  for (const listingType of ["regular", "featured", "extended"]) {
+    const typeListings = listingsByType[listingType];
+    if (!typeListings.every(item => "listingId" in item)) {
+      throw new Error(`Map search results (listingsByType[${listingType}]) corrupt.`);
+    }
+
+    listingIds.concat(typeListings.map(item => item.listingId))
   }
 
   console.log(`Map search results passed basic validation: found ${results.listings.length} listings.`);
-  return results.listings.map(item => item.listing_id);
+  return listingIds;
 }
 
 function messageToPolyline(record) {
@@ -28,12 +45,11 @@ function messageToPolyline(record) {
 
 function searchForAdverts(section) {
   return async polyline => {
-    const postParams = {
-      polyenc: [ polyline ],
-      q: "",
-      section
-    };
-    return post("https://www.zoopla.co.uk/ajax/maps/listings", postParams)
+    console.log(`Processing polyline: ${polyline}.`);
+    const graphql = GRAPHQL_TEMPLATE
+      .replace(/&polyenc=/, `&polyenc=${polyline}`)
+      .replace(/\/SECTION\/map/, `/${section}/map`);
+    return post("https://api-graphql-lambda.prod.zoopla.co.uk/graphql", graphql)
       .then(extractAdvertIds);
   };
 }
