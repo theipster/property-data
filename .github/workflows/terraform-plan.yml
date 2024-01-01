@@ -1,0 +1,27 @@
+name: 🚀 Terraform plan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform-plan:
+    name: Terraform plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/${{ github.repository }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - run: |
+          for service in $(find . -type f -name main.tf -exec dirname {} \; | uniq); do
+            echo "Processing service $service..."
+            terraform -chdir=$service init
+            terraform -chdir=$service plan
+          done
