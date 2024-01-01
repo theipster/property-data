@@ -1,5 +1,9 @@
+locals {
+  ddb_areas_table_name = "${var.service}-${var.stage}-AreasTable-HWMHZXTRHY1O"
+}
+
 resource "aws_dynamodb_table" "areas" {
-  name     = "geographical-areas-dev-AreasTable-HWMHZXTRHY1O"
+  name     = local.ddb_areas_table_name
   hash_key = "polyline"
 
   billing_mode     = "PAY_PER_REQUEST"
@@ -18,5 +22,5 @@ resource "aws_dynamodb_table" "areas" {
 
 import {
   to = aws_dynamodb_table.areas
-  id = "geographical-areas-dev-AreasTable-HWMHZXTRHY1O"
+  id = local.ddb_areas_table_name
 }

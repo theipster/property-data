@@ -26,5 +26,5 @@ jobs:
           for service in $(find . -type f -name main.tf -exec dirname {} \; | uniq); do
             echo "Processing service $service..."
             terraform -chdir=$service init
-            terraform -chdir=$service plan
+            terraform -chdir=$service plan -var="service=$service" -var='stage=DEV'
           done
