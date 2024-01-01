@@ -3,6 +3,7 @@ resource "aws_dynamodb_table" "areas" {
   hash_key = "polyline"
 
   billing_mode     = "PAY_PER_REQUEST"
+  stream_enabled   = true
   stream_view_type = "KEYS_ONLY"
 
   attribute {
