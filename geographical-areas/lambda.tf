@@ -11,13 +11,15 @@ resource "aws_lambda_event_source_mapping" "notify" {
   function_name = aws_lambda_function.notify.arn
 
   event_source_arn = aws_dynamodb_table.areas.stream_arn
+
+  starting_position = "TRIM_HORIZON"
 }
 
 resource "aws_lambda_function" "notify" {
   function_name = local.lambda_fn_notify_name
   role          = aws_iam_role.fn_exec.arn
 
-  description                    = "Given a geographical area: emit a GEOGRAPHICAL_AREA_IDENTIFIED event."
+  description                    = "Given a geographical area: emit a GEOGRAPHICAL_AREA_IDENTIFIED event.\n"
   handler                        = "notify.handler"
   memory_size                    = 256
   reserved_concurrent_executions = 1

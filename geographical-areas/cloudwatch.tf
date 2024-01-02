@@ -7,7 +7,7 @@ resource "aws_cloudwatch_log_group" "notify_fn" {
 
   retention_in_days = 14
 
-  tags_all = {}
+  tags = {}
 }
 
 import {
