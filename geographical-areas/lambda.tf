@@ -17,6 +17,8 @@ resource "aws_lambda_function" "notify" {
   function_name = local.lambda_fn_notify_name
   role          = aws_iam_role.fn_exec.arn
 
+  handler   = "notify.handler"
+  runtime   = "nodejs12.x"
   s3_bucket = data.aws_s3_object.notify_fn.bucket
   s3_key    = data.aws_s3_object.notify_fn.key
 }
