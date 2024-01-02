@@ -23,7 +23,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - run: |
-          for service in $(find . -type f -name main.tf -exec dirname {} \; | uniq); do
+          for service in $(find . -type f -name main.tf -exec dirname {} \; | uniq | sed "s~^./~~"); do
             echo "Processing service $service..."
             terraform -chdir=$service init
             terraform -chdir=$service plan -var="service=$service" -var='stage=DEV'
