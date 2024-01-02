@@ -41,6 +41,14 @@ resource "aws_lambda_function" "notify" {
   tags = {
     SERVICE = var.service
   }
+
+  lifecycle {
+    ignore_changes = [
+      s3_bucket,
+      s3_key,
+      s3_object_version,
+    ]
+  }
 }
 
 import {
