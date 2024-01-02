@@ -22,7 +22,9 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
-      - run: |
+      - env:
+          TF_IN_AUTOMATION: true
+        run: |
           for service in $(find . -type f -name main.tf -exec dirname {} \; | uniq | sed "s~^./~~"); do
             echo "Processing service $service..."
             terraform -chdir=$service init
