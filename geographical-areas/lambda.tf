@@ -17,10 +17,26 @@ resource "aws_lambda_function" "notify" {
   function_name = local.lambda_fn_notify_name
   role          = aws_iam_role.fn_exec.arn
 
-  handler   = "notify.handler"
-  runtime   = "nodejs12.x"
-  s3_bucket = data.aws_s3_object.notify_fn.bucket
-  s3_key    = data.aws_s3_object.notify_fn.key
+  description                    = "Given a geographical area: emit a GEOGRAPHICAL_AREA_IDENTIFIED event."
+  handler                        = "notify.handler"
+  memory_size                    = 256
+  reserved_concurrent_executions = 1
+  runtime                        = "nodejs12.x"
+  s3_bucket                      = data.aws_s3_object.notify_fn.bucket
+  s3_key                         = data.aws_s3_object.notify_fn.key
+  timeout                        = 6
+
+  environment {
+    variables = {
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED = 1
+      EVENT_BUS                           = "default"
+      EVENT_SOURCE                        = "property-data.geographical-areas"
+    }
+  }
+
+  tags = {
+    SERVICE = var.service
+  }
 }
 
 import {
