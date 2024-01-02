@@ -5,3 +5,7 @@ provider "aws" {
     }
   }
 }
+
+provider "aws" {
+  alias = "no_tags"
+}

@@ -23,11 +23,11 @@ resource "aws_lambda_function" "notify" {
   description                    = "Given a geographical area: emit a GEOGRAPHICAL_AREA_IDENTIFIED event.\n"
   handler                        = "notify.handler"
   memory_size                    = 256
-  publish                        = true
   reserved_concurrent_executions = 1
   runtime                        = "nodejs12.x"
   s3_bucket                      = data.aws_s3_object.notify_fn.bucket
   s3_key                         = data.aws_s3_object.notify_fn.key
+  s3_object_version              = data.aws_s3_object.notify_fn.version_id
   timeout                        = 6
 
   environment {
